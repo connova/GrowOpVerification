@@ -12,5 +12,6 @@ interface IStrainMetadata {
         uint growRate; // 0-255
         uint lastHarvest;
         uint breedingCost;
+        bool mintedFromStarter;
     }
 }

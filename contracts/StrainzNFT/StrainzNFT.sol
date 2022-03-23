@@ -26,6 +26,7 @@ contract StrainzNFT is ERC721Enumerable, StrainzDNA, IStrainMetadata {
     uint public compostFactor = 100;
     uint public breedingCostFactor = 5;
     uint public breedFertilizerCost = 1000e18;
+    uint public starterPackSproutTime = 4 days + 20 hours;
 
 
     mapping(uint => StrainMetadata) public strainData;
@@ -44,22 +45,22 @@ contract StrainzNFT is ERC721Enumerable, StrainzDNA, IStrainMetadata {
         return "https://api.v2.strainz.tech/strain/";
     }
 
-    function mintTo(address receiver, string memory prefix, string memory postfix, uint dna, uint generation, uint growRate) private returns (uint) {
+    function mintTo(address receiver, string memory prefix, string memory postfix, uint dna, uint generation, uint growRate, bool mintedFromStarter) private returns (uint) {
         _tokenIdCounter.increment();
         uint tokenId = _tokenIdCounter.current();
         _mint(receiver, tokenId);
-        strainData[tokenId] = StrainMetadata(tokenId, prefix, postfix, dna, generation, growRate, block.timestamp, growRate * breedingCostFactor);
+        strainData[tokenId] = StrainMetadata(tokenId, prefix, postfix, dna, generation, growRate, block.timestamp, growRate * breedingCostFactor, mintedFromStarter);
         emit Minted(tokenId);
         return tokenId;
     }
 
     // mint promotional unique strainz (will get custom images)
     function mintPromotion(address receiver, string memory prefix, string memory postfix, uint dna) public onlyMaster {
-        mintTo(receiver, prefix, postfix, dna, 0, 255);
+        mintTo(receiver, prefix, postfix, dna, 0, 255, false);
     }
 
     function mintFromStarter(address receiver, string memory prefix, string memory postfix, uint dna) public onlyMaster {
-        mintTo(receiver, prefix, postfix, dna, 0, 255);
+        mintTo(receiver, prefix, postfix, dna, 0, 255, true);
     }
 
     // breed two strainz
@@ -100,7 +101,8 @@ contract StrainzNFT is ERC721Enumerable, StrainzDNA, IStrainMetadata {
             mix ? strain1.prefix : strain2.prefix,
             mix ? strain2.postfix : strain1.postfix,
             newDNA, generation,
-            mixStat(strain1.growRate, strain2.growRate, breedFertilizer)
+            mixStat(strain1.growRate, strain2.growRate, breedFertilizer),
+            false
         );
     }
 
@@ -154,7 +156,11 @@ contract StrainzNFT is ERC721Enumerable, StrainzDNA, IStrainMetadata {
 
     function harvestableAmount(uint tokenId) public view returns (uint) {
         StrainMetadata storage strain = strainData[tokenId];
+        
         uint timeSinceLastHarvest = block.timestamp - strain.lastHarvest;
+
+        if (strain.mintedFromStarter == true) {
+            require(timeSinceLastHarvest >= starterPackSproutTime);}
 
         uint fertilizerBonus = master.seedzToken().getHarvestableFertilizerAmount(tokenId, strain.lastHarvest);
 
@@ -238,7 +244,7 @@ contract StrainzNFT is ERC721Enumerable, StrainzDNA, IStrainMetadata {
                     uint amountToHarvest = (strain.growRate * 255 * timeSinceLastHarvest) / 24 weeks;
                     // old formular
                     sumToHarvest += amountToHarvest;
-                    uint migratedId = mintTo(user, strain.prefix, strain.postfix, strain.dna, strain.generation, max(16, strain.growRate));
+                    uint migratedId = mintTo(user, strain.prefix, strain.postfix, strain.dna, strain.generation, max(16, strain.growRate), false);
                     strainData[migratedId].breedingCost = getNewBreedingCost(strain);
 
                     // accessories
@@ -270,9 +276,10 @@ contract StrainzNFT is ERC721Enumerable, StrainzDNA, IStrainMetadata {
         uint generation,
         uint growRate, // 0-255
         uint lastHarvest,
-        uint breedingCost) = strainzV1NFT.strainData(strainId);
+        uint breedingCost,
+        bool mintedFromStarter) = strainzV1NFT.strainData(strainId);
 
-        return StrainMetadata(id, prefix, postfix, dna, generation, max(16, growRate), lastHarvest, breedingCost);
+        return StrainMetadata(id, prefix, postfix, dna, generation, max(16, growRate), lastHarvest, breedingCost, mintedFromStarter);
     }
 
     function getNewBreedingCost(StrainMetadata memory strain) private pure returns (uint) {
@@ -311,6 +318,10 @@ contract StrainzNFT is ERC721Enumerable, StrainzDNA, IStrainMetadata {
 
     function setBreedingCostFactor(uint newBreedingCostFactor) public onlyMaster {
         breedingCostFactor = newBreedingCostFactor;
+    }
+
+    function setStarterPackSproutTime(uint newTime) public onlyMaster {
+        starterPackSproutTime = newTime;
     }
 
 }

@@ -20,15 +20,29 @@ contract SeedsStarterPack is ERC721Enumerable{
     uint priceForSeedsStarterPack;
 
     StrainzMaster master;
+    mapping (address => bool) isMaster;
 
     mapping(uint => bool) isNFTConsumedToMintStrainzNFT;
     mapping(uint => bool) isPot;
     mapping(address => uint[]) wallet;
 
-    constructor(address buds, address fourTwenty) ERC721("Strainz Starterpack", "Starter") {
+    constructor(address buds, address fourTwenty, uint priceOfPot, uint priceOfSeedsStarterPack) ERC721("Strainz Starterpack", "Starter") {
         budsContract = buds;
         fourTwentyContract = fourTwenty;
         master = StrainzMaster(msg.sender);
+        priceForPot = priceOfPot;
+        priceForSeedsStarterPack = priceOfSeedsStarterPack;
+        isMaster[msg.sender] = true;
+    }
+
+    function setPriceForPot(uint newPrice) public {
+        require(isMaster[msg.sender], "Error: Authorization Denied"); // -connova
+        priceForPot = newPrice;
+    }
+
+    function setPriceForSeedsStarterPack(uint newPrice) public {
+        require(isMaster[msg.sender] == true, "Error: Authorization Denied"); // -connova
+        priceForSeedsStarterPack = newPrice;
     }
 
     function buyPot() public {

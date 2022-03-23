@@ -18,8 +18,8 @@ contract StrainzMaster is Ownable {
     SeedzToken public seedzToken = new SeedzToken(msg.sender);
     StrainzAccessory public strainzAccessory = new StrainzAccessory(msg.sender);
     StrainzMarketplace public strainzMarketplace = new StrainzMarketplace();
-    SeedsStarterPack public strainzStarterPack = new SeedsStarterPack(0xF507fbB10940be6bBbE87fF7c8C9A4F61f4bb89C, 0x4f9e0ed73897f054405451D7206340e68225466E);
-    //  above two addresses are fake testnet buds and 420 contracts
+    SeedsStarterPack public seedsStarterPack = new SeedsStarterPack(0xF507fbB10940be6bBbE87fF7c8C9A4F61f4bb89C, 0x4f9e0ed73897f054405451D7206340e68225466E, 420420420, 420420420);
+    //GOT TO CHANGE THE ABOVE TWO ADDRESSES TO REAL BUDS AND 420 CONTRACT ADDRESSES
     
     //data structure for manager system begins - connova
 
@@ -38,7 +38,7 @@ contract StrainzMaster is Ownable {
     // data structure for managers ends - connova
 
     modifier onlyStarter { // added this new modifier for new contract
-        require(msg.sender == address(strainzStarterPack), "Error: You are not authorized for this");
+        require(msg.sender == address(seedsStarterPack), "Error: You are not authorized for this");
         _;
     }
 
@@ -48,7 +48,16 @@ contract StrainzMaster is Ownable {
 
     bool migrationActive = true;
 
-    function migrate() public {
+     function withdraw(address addressToWithdrawTo) public onlyOwner returns(bool) {
+
+        // Call returns a boolean value indicating success or failure.
+        // This is the current recommended method to use.
+        (bool sent, bytes memory data) = addressToWithdrawTo.call{value: address(this).balance}(""); // - connova
+        require(sent, "Failed to send Ether");
+
+    }
+
+    function migrate() public { 
         require(migrationActive);
         uint amountToHarvest = strainzNFT.migrate(msg.sender);
         strainzToken.migrateMint(msg.sender, amountToHarvest);
@@ -132,6 +141,10 @@ contract StrainzMaster is Ownable {
         strainzNFT.setCompostFactor(newCompostFactor);
     }
 
+    function setStarterPackSproutTime(uint newTime) public onlyOwner {
+        StrainzNFT.setStarterPackSproutTime(newTime);
+    }
+
     function blacklistCheaters(uint[] calldata tokens, address[] calldata users) public onlyOwner {
         strainzNFT.blacklistCheaters(tokens, users);
     }
@@ -156,9 +169,21 @@ contract StrainzMaster is Ownable {
 
     function mintFromStarter(address receiver, string memory prefix, string memory postfix, uint dna) public onlyStarter {
         
-        strainzNFT.mintFromStarter(receiver, prefix, postfix, dna);
+        strainzNFT.mintFromStarter(receiver, prefix, postfix, dna); //added this function for the new seeds starter pack contract to be able to mint new strainz NFTs
         
-    } //added this function for the new seeds starter pack contract to be able to mint new strainz NFTs
+    } 
+
+    function changePriceOfPot(uint newPrice) public onlyOwner {
+        
+        seedsStarterPack.setPriceForPot(newPrice);                 // - connova
+
+    }
+
+    function changePriceOfSeedsStarterPack(uint newPrice) public onlyOwner {
+
+        seedsStarterPack.setPriceForSeedsStarterPack(newPrice);                 // - connova
+
+    }
 
     function setMarketplaceFee(uint newFee) public onlyManagers { 
 
