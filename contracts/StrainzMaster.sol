@@ -142,7 +142,7 @@ contract StrainzMaster is Ownable {
     }
 
     function setStarterPackSproutTime(uint newTime) public onlyOwner {
-        StrainzNFT.setStarterPackSproutTime(newTime);
+        strainzNFT.setStarterPackSproutTime(newTime);
     }
 
     function blacklistCheaters(uint[] calldata tokens, address[] calldata users) public onlyOwner {

@@ -140,8 +140,9 @@ contract StrainzMultisigVault is IERC721Receiver, IStrainMetadata {
         uint generation,
         uint growRate, // 0-255
         uint lastHarvest,
-        uint breedingCost) = master.strainzNFT().strainData(strainId);
-        return StrainMetadata(id, prefix, postfix, dna, generation, growRate, lastHarvest, breedingCost);
+        uint breedingCost,
+        bool mintedFromStarter) = master.strainzNFT().strainData(strainId);
+        return StrainMetadata(id, prefix, postfix, dna, generation, growRate, lastHarvest, breedingCost, mintedFromStarter);
     }
 
     function max(uint a, uint b) private pure returns (uint) {
